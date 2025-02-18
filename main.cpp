@@ -165,6 +165,7 @@ struct Enter_DFU_Mode{};
 struct CAN_Frame{
     std::uint8_t node_id;
     std::uint8_t cmd_id;
+    std::uint8_t len;
     union{
         Get_Version get_version;
         Heartbeat heartbeat;
@@ -207,11 +208,14 @@ CAN_Frame Read_CAN_Bus1(int can_socket){
     ssize_t bytes_read;
     CAN_Frame frame;
 
+    // TODO: What do we do if the entire frame wasn't read? Is that a possible case?
+    // Attempt to read more data? Wouldn't this potentially also read part of the next frame?
     bytes_read = read(can_socket, &raw_frame, sizeof(raw_frame));
     if (bytes_read != sizeof(frame)) return frame;
 
     frame.node_id = (raw_frame.can_id & 0x3f) >> 6;
     frame.cmd_id = raw_frame.can_id & 0x1f;
+    frame.len = raw_frame.len;
     std::memcpy(&frame.cmd, raw_frame.data, raw_frame.len);
     return frame;
 }
@@ -222,6 +226,20 @@ std::vector<CAN_Frame> Read_CAN_Bus(int can_socket, std::size_t max = 1){
         if ((COMMAND)frame.cmd_id == COMMAND::NONE) break;
         out.push_back(frame);
     }
+    return out;
+}
+void Write_CAN_Bus1(int can_socket, const CAN_Frame& frame){
+    can_frame raw_frame;
+    raw_frame.can_id = (frame.node_id << 6) | frame.cmd_id;
+    std::memcpy(raw_frame.data, frame.cmd, sizeof(frame.cmd));
+    raw_frame.len = frame.len;
+    // TODO: What do we do if the full frame wasn't sent? Send it again? Is that a possible case?
+    // Sending the remainder of the packet would cause it to not be read correctly.
+    return write(can_socket, &raw_frame, sizeof(raw_frame)) != sizeof(can_frame));
+}
+std::vector<std::size_t> Write_Can_Bus(int can_socket, const std::vector<CAN_Frame>& frames){
+    std::vector<std::size_t> out;
+    for (const CAN_Frame& frame : frames) out.push_back(Write_CAN_Bus1(can_socket, frame));
     return out;
 }
 
@@ -247,7 +265,7 @@ int Bind_CAN_Socket(int can_socket, const std::string& can_id, sockaddr_can* out
 }
 
 int main(){
-    // Constants for ODrive control
+    // Set this to the node ID of the ODrive controller
     const std::size_t ODRIVE_NODE_ID = 0x00;
 
     // Open socket as CAN socket
