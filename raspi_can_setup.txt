@@ -1,0 +1,23 @@
+# Enable 'Serial Peripheral Interface' (SPI)
+Run 'sudo raspi-config'
+Select 'Interface Options'
+Select 'SPI'
+Select 'Yes'
+Write Config
+
+# Set 'SPI' settings
+Edit /boot/config.txt
+If it doesn't exist, run:
+    sudo ln -s /boot/firmware/config.txt /boot/config.txt
+Under '[all]', add:
+    #----------SPI-----------
+    dtparam=spi=on
+    dtoverlay=CAN_MICROCHIP-CAN_INTERFACE,oscillator=OSCILLATOR_HZ,interrupt=25,spimaxfrequency=1000000
+
+CAN_MICROCHIP = Name of the microchip used to encode/decode CAN
+CAN_INTERFACE = Name of the interface to use. This will be used to address this CAN interface. Any string will do
+OSCILLATOR_HZ = Frequency of the oscillator (This should be on the controller that the CAN_MICROCHIP is mounted on)
+
+For the 'RS485 CAN HAT v2.1':
+    CAN_MICROCHIP = mcp2515
+    OSCILLATOR_HZ = 12000000
