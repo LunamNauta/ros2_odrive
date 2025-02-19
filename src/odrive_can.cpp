@@ -26,7 +26,7 @@ CAN_Frame Read_CAN_Bus1(int can_socket){
     bytes_read = read(can_socket, &raw_frame, sizeof(raw_frame));
     if (bytes_read != sizeof(frame)) return frame;
 
-    frame.node_id = (raw_frame.can_id & 0x3f) >> 6;
+    frame.node_id = (raw_frame.can_id & 0x3f) >> 5;
     frame.cmd_id = raw_frame.can_id & 0x1f;
     frame.len = raw_frame.len;
     std::memcpy(&frame.cmd, raw_frame.data, raw_frame.len);
@@ -43,7 +43,7 @@ std::vector<CAN_Frame> Read_CAN_Bus(int can_socket, std::size_t max){
 }
 ssize_t Write_CAN_Bus1(int can_socket, const CAN_Frame& frame){
     can_frame raw_frame;
-    raw_frame.can_id = (frame.node_id << 6) | frame.cmd_id;
+    raw_frame.can_id = (frame.node_id << 5) | frame.cmd_id;
     std::memcpy(raw_frame.data, &frame.cmd, sizeof(raw_frame.data));
     raw_frame.len = frame.len;
     // TODO: What do we do if the full frame wasn't sent? Send it again? Is that a possible case?

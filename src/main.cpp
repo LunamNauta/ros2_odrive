@@ -4,7 +4,7 @@
 
 int main(){
     // Set this to the node ID of the ODrive controller
-    const std::size_t ODRIVE_NODE_ID = 0x00;
+    const std::size_t ODRIVE_NODE_ID = 0x02;
 
     // Open socket as CAN socket
     int can_socket = ODrive_CAN::Create_CAN_Socket();
@@ -19,8 +19,8 @@ int main(){
         return -1;
     }
 
-    // Clear CAN buffer
-    ODrive_CAN::Clear_CAN_Bus(can_socket);
+    // Clear CAN buffer - This doesn't work
+    // ODrive_CAN::Clear_CAN_Bus(can_socket);
 
     // Read all heartbeat signals
     while (true){
@@ -29,7 +29,6 @@ int main(){
         ODrive_CAN::Heartbeat heartbeat = frame.cmd.heartbeat;
         std::cout << "Axis_Error: " << heartbeat.axis_error << "\n";
         std::cout << "Axis_State: " << heartbeat.axis_state << "\n";
-        std::cout << "Procedure_Result: " << heartbeat.procedure_result << "\n";
         std::cout << "Trajectory_Done_Flag:" << heartbeat.trajectory_done_flag << "\n";
         std::cout << "\n";
     }
